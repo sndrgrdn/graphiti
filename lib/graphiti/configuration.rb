@@ -51,6 +51,12 @@ module Graphiti
       end
     end
 
+    def sideload_middleware
+      @sideload_middleware ||= Middleware::Chain.new
+      yield @sideload_middleware if block_given?
+      @sideload_middleware
+    end
+
     def schema_path
       @schema_path ||= raise("No schema_path defined! Set Graphiti.config.schema_path to save your schema.")
     end

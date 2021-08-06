@@ -40,13 +40,19 @@ module Graphiti
       @query.sideloads.each_pair do |name, q|
         sideload = @resource.class.sideload(name)
         next if sideload.nil? || sideload.shared_remote?
+
         parent_resource = @resource
-        graphiti_context = Graphiti.context
+        graphiti_context = Graphiti.config.sideload_middleware.prepare(sideload, Graphiti.context.dup)
+
         resolve_sideload = -> {
           Graphiti.context = graphiti_context
-          sideload.resolve(results, q, parent_resource)
-          @resource.adapter.close if concurrent
+
+          Graphiti.config.sideload_middleware.call do
+            sideload.resolve(results, q, parent_resource)
+            @resource.adapter.close if concurrent
+          end
         }
+
         if concurrent
           promises << Concurrent::Promise.execute(&resolve_sideload)
         else

@@ -171,9 +171,17 @@ require "graphiti/extensions/boolean_attribute"
 require "graphiti/extensions/temp_id"
 require "graphiti/serializer"
 require "graphiti/debugger"
+require "graphiti/middleware/chain"
 
 if defined?(ActiveRecord)
   require "graphiti/adapters/active_record"
+  require "graphiti/middleware/active_record"
+
+  Graphiti.configure do |c|
+    c.sideload_middleware do |chain|
+      chain.add(Graphiti::Middleware::ActiveRecord)
+    end
+  end
 end
 
 if defined?(Rails)
