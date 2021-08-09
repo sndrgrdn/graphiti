@@ -56,14 +56,8 @@ module Graphiti
 
         graphiti_context = Graphiti.context
         resolve_sideload = -> {
-          thread.each_pair do |key, value|
-            Thread.current[key] = value
-          end
-
-          thread_variables.each_pair do |key, value|
-            Thread.current.thread_variable_set(key, value)
-          end
-
+          thread.each_pair { |key, value| Thread.current[key] = value }
+          thread_variables.each_pair { |key, value| Thread.current.thread_variable_set(key, value) }
           Graphiti.context = graphiti_context
           sideload.resolve(results, q, parent_resource)
           @resource.adapter.close if concurrent
