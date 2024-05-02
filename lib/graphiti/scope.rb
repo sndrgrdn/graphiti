@@ -50,11 +50,15 @@ module Graphiti
           hash[var] = Thread.current.thread_variable_get(var)
         end
 
-        current_attributes_instances = ActiveSupport::IsolatedExecutionState[:current_attributes_instances]
+        if ::Rails::VERSION::MAJOR >= 7
+          current_attributes_instances = ActiveSupport::IsolatedExecutionState[:current_attributes_instances]
+        end
 
         graphiti_context = Graphiti.context
         resolve_sideload = -> {
-          ActiveSupport::IsolatedExecutionState[:current_attributes_instances] = current_attributes_instances
+          if ::Rails::VERSION::MAJOR >= 7
+            ActiveSupport::IsolatedExecutionState[:current_attributes_instances] = current_attributes_instances
+          end
 
           thread.each { |key, value| Thread.current[key] = value }
           thread_variables.each { |key, value| Thread.current.thread_variable_set(key, value) }
