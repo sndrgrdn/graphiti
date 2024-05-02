@@ -7,6 +7,7 @@ require "active_support/core_ext/hash/conversions" # to_xml
 require "active_support/concern"
 require "active_support/time"
 require "active_support/deprecation"
+require "active_support/isolated_execution_state"
 
 require "dry-types"
 require "graphiti_errors"

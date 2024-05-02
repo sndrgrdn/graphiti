@@ -42,22 +42,23 @@ module Graphiti
         next if sideload.nil? || sideload.shared_remote?
         parent_resource = @resource
 
-        thread = {}.tap do |hash|
-          Thread.current.keys.each do |key|
-            hash[key] = Thread.current[key]
-          end
+        thread = Thread.current.keys.each_with_object({}) do |key, hash|
+          hash[key] = Thread.current[key]
         end
 
-        thread_variables = {}.tap do |hash|
-          Thread.current.thread_variables.each do |var|
-            hash[var] = Thread.current.thread_variable_get(var)
-          end
+        thread_variables = Thread.current.thread_variables.each_with_object({}) do |var, hash|
+          hash[var] = Thread.current.thread_variable_get(var)
         end
+
+        current_attributes_instances = ActiveSupport::IsolatedExecutionState[:current_attributes_instances]
 
         graphiti_context = Graphiti.context
         resolve_sideload = -> {
-          thread.each_pair { |key, value| Thread.current[key] = value }
-          thread_variables.each_pair { |key, value| Thread.current.thread_variable_set(key, value) }
+          ActiveSupport::IsolatedExecutionState[:current_attributes_instances] = current_attributes_instances
+
+          thread.each { |key, value| Thread.current[key] = value }
+          thread_variables.each { |key, value| Thread.current.thread_variable_set(key, value) }
+
           Graphiti.context = graphiti_context
           sideload.resolve(results, q, parent_resource)
           @resource.adapter.close if concurrent
