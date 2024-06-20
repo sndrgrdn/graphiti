@@ -2,7 +2,7 @@ module Graphiti
   class Query
     attr_reader :resource, :association_name, :params, :action
 
-    def initialize(resource, params, association_name = nil, nested_include = nil, parents = [], action = nil)
+    def initialize(resource, params, association_name = nil, nested_include = nil, parents = [], action = nil, allowed_sideloads = nil)
       @resource = resource
       @association_name = association_name
       @params = params
@@ -12,6 +12,12 @@ module Graphiti
       @include_param = nested_include || @params[:include]
       @parents = parents
       @action = parse_action(action)
+
+      @allowed_sideloads = allowed_sideloads
+      if @allowed_sideloads.nil? && @resource.context&.respond_to?(:sideload_allowlist)
+        allowlist = @resource.context.sideload_allowlist
+        @allowed_sideloads = allowlist[@resource.context_namespace] if allowlist
+      end
     end
 
     def association?
@@ -199,14 +205,7 @@ module Graphiti
     def include_hash
       @include_hash ||= begin
         requested = include_directive.to_hash
-
-        allowlist = nil
-        if @resource.context&.respond_to?(:sideload_allowlist)
-          allowlist = @resource.context.sideload_allowlist
-          allowlist = allowlist[@resource.context_namespace] if allowlist
-        end
-
-        allowlist ? Util::IncludeParams.scrub(requested, allowlist) : requested
+        @allowed_sideloads ? Util::IncludeParams.scrub(requested, @allowed_sideloads) : requested
       end
 
       @include_hash
